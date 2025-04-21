@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 
 const getRandomAQI = () => {
-  // Simula um valor aleatório de AQI entre 30 e 200
   return Math.floor(Math.random() * 170) + 30;
 };
 
