@@ -5,12 +5,20 @@ import {
   StyleSheet,
   SafeAreaView,
   Animated,
-  Easing,
 } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 
-const getRandomAQI = () => {
-  return Math.floor(Math.random() * 170) + 30;
-};
+const CIDADES_AMAZONAS = [
+  'Manaus',
+  'Parintins',
+  'Itacoatiara',
+  'Manacapuru',
+  'Coari',
+  'Tefé',
+  'Eirunepé',
+];
+
+const getRandomAQI = () => Math.floor(Math.random() * 170) + 30;
 
 const getAQIStatus = (aqi: number) => {
   if (aqi <= 50) return { status: 'Boa', color: '#2e7d32', warning: 'Qualidade do ar satisfatória.' };
@@ -20,26 +28,32 @@ const getAQIStatus = (aqi: number) => {
 };
 
 export default function Index() {
+  const [open, setOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState(CIDADES_AMAZONAS[0]);
+  const [items, setItems] = useState(
+    CIDADES_AMAZONAS.map((city) => ({ label: city, value: city }))
+  );
+
   const [aqi, setAqi] = useState(getRandomAQI());
   const [updatedTime, setUpdatedTime] = useState('Atualizado agora');
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  const animateAQI = () => {
-    fadeAnim.setValue(0);
+  const updateAQI = () => {
+    const newAQI = getRandomAQI();
     Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      easing: Easing.out(Easing.ease),
+      toValue: 0,
+      duration: 200,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      setAqi(newAQI);
+      setUpdatedTime('Atualizado há poucos segundos');
+      fadeAnim.setValue(1);
+    });
   };
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const newAQI = getRandomAQI();
-      setAqi(newAQI);
-      setUpdatedTime('Atualizado há poucos segundos');
-      animateAQI();
+      updateAQI();
     }, 5000);
 
     return () => clearInterval(interval);
@@ -49,18 +63,33 @@ export default function Index() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.location}>Manaus - AM</Text>
+      <Text style={styles.title}>Selecione uma cidade</Text>
 
-      <View style={styles.aqiBox}>
+      <DropDownPicker
+        open={open}
+        value={selectedCity}
+        items={items}
+        setOpen={setOpen}
+        setValue={setSelectedCity}
+        setItems={setItems}
+        onChangeValue={() => updateAQI()}
+        style={styles.dropdown}
+        dropDownContainerStyle={styles.dropdownContainer}
+        textStyle={styles.dropdownText}
+        labelStyle={styles.dropdownLabel}
+        placeholder="Escolha uma cidade"
+      />
+
+      <View style={styles.card}>
+        <Text style={styles.location}>{selectedCity} - AM</Text>
         <Text style={styles.aqiLabel}>Qualidade do Ar (AQI)</Text>
         <Animated.Text style={[styles.aqiValue, { color, opacity: fadeAnim }]}>
           {aqi}
         </Animated.Text>
         <Text style={[styles.status, { color }]}>{status}</Text>
         <Text style={styles.warning}>{warning}</Text>
+        <Text style={styles.updated}>{updatedTime}</Text>
       </View>
-
-      <Text style={styles.updated}>{updatedTime}</Text>
     </SafeAreaView>
   );
 }
@@ -69,36 +98,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#e0f7fa',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    alignItems: 'center',
   },
-  location: {
-    fontSize: 22,
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  dropdown: {
+    width: '100%',
+    borderRadius: 10,
+    borderColor: '#90caf9',
     marginBottom: 20,
   },
-  aqiBox: {
+  dropdownContainer: {
+    borderColor: '#90caf9',
+    borderRadius: 10,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dropdownLabel: {
+    fontWeight: 'bold',
+  },
+  card: {
     backgroundColor: '#ffffff',
-    padding: 30,
+    padding: 25,
     borderRadius: 20,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 4,
+    width: '100%',
   },
-  aqiLabel: {
-    fontSize: 18,
+  location: {
+    fontSize: 20,
+    fontWeight: 'bold',
     marginBottom: 10,
   },
+  aqiLabel: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
   aqiValue: {
-    fontSize: 50,
+    fontSize: 42,
     fontWeight: 'bold',
   },
   status: {
-    fontSize: 20,
+    fontSize: 18,
     marginTop: 10,
   },
   warning: {
@@ -108,8 +159,8 @@ const styles = StyleSheet.create({
     color: '#616161',
   },
   updated: {
-    marginTop: 30,
-    fontSize: 14,
+    marginTop: 15,
+    fontSize: 13,
     color: '#999',
   },
 });
